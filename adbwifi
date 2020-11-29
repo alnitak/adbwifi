@@ -1,0 +1,59 @@
+# Copyright (C) 1883 Marco Bavagnoli [marcobavagnolidev@gmail.com] - All Rights Reserved
+# You may use, distribute and modify this code under the
+# terms of whatever licence you like
+
+# Script to connect your hundreds of devices over wifi. 
+# This let you to run & debug without using thousands of USB cables.
+
+#!/bin/bash
+
+echo "1) disconnect all devices"
+echo "2) connect all device connected with an USB cable"
+read -p "" response
+if [[ $response == "1" ]]; then
+	adb disconnect
+exit 0
+fi
+
+printf "\n"
+
+echo "Connect one or more devces with the USB cable."
+read -n 1 -s -r -p "press any key"
+printf "\n"
+printf "\n"
+
+# fill devices array excluding those starting with an ip address
+device=( $(adb devices | egrep -wo '(.*)device' | egrep -v '(([0-9]{1,3}[\.]){3}[0-9]{1,3})' | sed -e 's/\tdevice//g' ) )
+
+
+# for each devices get their ip adreess and connect it
+for value in "${device[@]}"
+do
+     sleep 1
+     # connect the device to 5555 port
+     adb -s $value tcpip 5555
+
+
+     read -n 1 -s -r -p "if asked, put the phone into 'File transfer mode'"
+     printf "\n\n"
+     ipaddr=`adb -s $value shell "ip addr show wlan0 | grep -e wlan0$ | cut -d\" \" -f 6 | cut -d/ -f 1"`
+     echo "ip found: ${ipaddr}  for device: $value"
+	 printf "\n\n"
+
+     # wait some seconds before connecting it
+     sleep 2
+     adb -s $value connect $ipaddr:5555
+     printf "\n\n"
+done
+
+read -n 1 -s -r -p "cut the USB cable(s) and press any key"
+printf "\n\n"
+
+adb devices
+
+#adb logcat
+
+
+
+
+
